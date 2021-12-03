@@ -11,7 +11,7 @@
 #include <GL4D/gl4dp.h>
 /* inclure la bibliothèque de rendu DIY */
 #include "rasterize.h"
-
+#include <stdio.h>
 /* inclusion des entêtes de fonctions de création et de gestion de
  * fenêtres système ouvrant un contexte favorable à GL4dummies. Cette
  * partie est dépendante de la bibliothèque SDL2 */
@@ -25,7 +25,6 @@ static void sortie(void);
 
 /*!\brief une surface représentant un cube */
 static surface_t * _cube = NULL;
-
 /* des variable d'états pour activer/désactiver des options de rendu */
 static int _use_tex = 1, _use_color = 1, _use_lighting = 1;
 
@@ -33,7 +32,7 @@ static int _use_tex = 1, _use_color = 1, _use_lighting = 1;
 /* on créé une grille de positions où il y aura des cubes */
 static int _grille[] = {
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+  1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
   1, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 1,
   1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
   1, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 1,
@@ -88,6 +87,7 @@ void init(void) {
   _cube   =   mk_cube();         /* ça fait 2x6 triangles      */
   /* on change la couleur */
   _cube->dcolor = b; 
+
   /* on leur rajoute la texture */
   id = get_texture_from_BMP("images/tex.bmp");
   set_texture_id(  _cube, id);
@@ -106,14 +106,6 @@ void init(void) {
 /*!\brief la fonction appelée à chaque display. */
 void draw(void) {
   /* on va récupérer le delta-temps */
-  static double t0 = 0.0; // le temps à la frame précédente
-  double t, dt;
-  t = gl4dGetElapsedTime();
-  dt = (t - t0) / 1000.0; // diviser par mille pour avoir des secondes
-  // pour le frame d'après, je mets à jour t0
-  t0 = t;
-  /* fin de récupération de delta-temps */
-  static float a = 0.0f;
   float model_view_matrix[16], projection_matrix[16], nmv[16];
   /* effacer l'écran et le buffer de profondeur */
   gl4dpClearScreen();
@@ -133,7 +125,7 @@ void draw(void) {
   float cZ = -2.0f * _grilleH / 2.0f;
   /* pour toutes les cases de la grille, afficher un cube quand il y a
    * un 1 dans la grille */
-  for(int i = 0; i < _grilleW; ++i) {
+  for(int i = 0; i < _grilleW; ++i) { // place les cubes a l'emplecement de la grille 
     for(int j = 0; j < _grilleH; ++j) {
       if(_grille[i * _grilleW + j] == 2){
         memcpy(nmv, model_view_matrix, sizeof nmv);
@@ -151,13 +143,10 @@ void draw(void) {
       }
     }
   }
-
-
   /* déclarer qu'on a changé des pixels du screen (en bas niveau) */
   gl4dpScreenHasChanged();
   /* fonction permettant de raffraîchir l'ensemble de la fenêtre*/
   gl4dpUpdateScreen(NULL);
-  a += 0.1f * 360.0f * dt;
 }
 
 /*!\brief intercepte l'événement clavier pour modifier les options. */

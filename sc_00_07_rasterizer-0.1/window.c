@@ -28,6 +28,7 @@ static void sortie(void);
 static surface_t * _cube = NULL;
 static surface_t * _cubeM = NULL;
 static surface_t * _sphere = NULL;
+static surface_t * _bombe = NULL;
 /* des variable d'états pour activer/désactiver des options de rendu */
 static int _use_tex = 1, _use_color = 1, _use_lighting = 1;
 typedef struct perso{
@@ -82,7 +83,7 @@ int main(int argc, char ** argv) {
  * utilisées dans ce code */
 void init(void) {
   GLuint id;
-  vec4 r = {1, 0, 0, 1}, g = {0, 1, 0, 1}, b = {0, 0, 1, 1};
+  vec4 r = {1, 0, 0, 1}, g = {0, 1, 0, 1}, b = {0, 0, 1, 1}, y = {1, 0, 1, 1};
   /* création d'un screen GL4Dummies (texture dans laquelle nous
    * pouvons dessiner) aux dimensions de la fenêtre.  IMPORTANT de
    * créer le screen avant d'utiliser les fonctions liées au
@@ -94,26 +95,31 @@ void init(void) {
   _cube   =   mk_cube();         /* ça fait 2x6 triangles      */
   _cubeM =   mk_cube(); 
   _sphere   =   mk_sphere(12,12);
+  _bombe = mk_sphere(12,12); // Partie bombe a améliorer
   /* on change la couleur */
   _cube->dcolor = b;  
   _sphere->dcolor = r;
+  _bombe->dcolor = y;
   _cubeM->dcolor = g;
   /* on leur rajoute la texture */
   id = get_texture_from_BMP("images/tex.bmp");
   set_texture_id(  _cube, id);
   set_texture_id(  _cubeM, id);
   set_texture_id(  _sphere, id);
+  set_texture_id(  _bombe, id);
   /* si _use_tex != 0, on active l'utilisation de la texture */
   if(_use_tex) {
     enable_surface_option(  _cube, SO_USE_TEXTURE);
     enable_surface_option(  _cubeM, SO_USE_TEXTURE);
     enable_surface_option(  _sphere, SO_USE_TEXTURE);
+    enable_surface_option(  _bombe, SO_USE_TEXTURE);
   }
   /* si _use_lighting != 0, on active l'ombrage */
   if(_use_lighting) {
     enable_surface_option(  _cube, SO_USE_LIGHTING);
     enable_surface_option(  _cubeM, SO_USE_LIGHTING);
     enable_surface_option(  _sphere, SO_USE_LIGHTING);
+    enable_surface_option(  _bombe, SO_USE_LIGHTING);
   }
   /* mettre en place la fonction à appeler en cas de sortie */
   atexit(sortie);
@@ -170,6 +176,11 @@ void draw(void) {
   //Lrand(25);
   for(int i = 0; i < _grilleW; ++i) { // place les cubes a l'emplecement de la grille 
     for(int j = 0; j < _grilleH; ++j) {
+      if(_grille[i * _grilleW + j] == 4){
+        memcpy(nmv, model_view_matrix, sizeof nmv);
+        translate(nmv, 2.0f * j + cX, 0.0f, 2.0f * i + cZ);
+        transform_n_rasterize(_bombe, nmv, projection_matrix);
+      }
       if(_grille[i * _grilleW + j] == 3){
         memcpy(nmv, model_view_matrix, sizeof nmv);
         translate(nmv, 2.0f * j + cX, 0.0f, 2.0f * i + cZ);
@@ -202,6 +213,15 @@ void draw(void) {
 /*!\brief intercepte l'événement clavier pour modifier les options. */
 void key(int keycode) {
   switch(keycode) {
+  case GL4DK_SPACE: // La partie bombe a amélioré
+    if( _grille[ perso.pos_x * _grilleW +  perso.pos_y +13 ] != 0 )
+      {
+    break;
+      }
+    else { 
+      _grille[ perso.pos_x * _grilleW +  perso.pos_y +13 ]=4;
+    break;
+    } 
   case GL4DK_UP:
     if( _grille[ perso.pos_x * _grilleW +  perso.pos_y - 13 ] != 0 )
       {
@@ -212,7 +232,6 @@ void key(int keycode) {
     _grille[ perso.pos_x * _grilleW +  perso.pos_y -13]=3;
     break;
     }
-    break;
   case GL4DK_DOWN:
     if( _grille[ perso.pos_x * _grilleW +  perso.pos_y +13 ] != 0 )
       {
@@ -223,7 +242,6 @@ void key(int keycode) {
       _grille[ perso.pos_x * _grilleW +  perso.pos_y +13 ]=3;
     break;
     }
-    break;
   case GL4DK_RIGHT:
     if( _grille[ perso.pos_x * _grilleW +  perso.pos_y + 1 ] != 0 )
       {
@@ -244,17 +262,18 @@ void key(int keycode) {
     _grille[ perso.pos_x * _grilleW +  perso.pos_y - 1]=3;
     break;
     }
-    break;
   case GL4DK_t: /* 't' la texture */
     _use_tex = !_use_tex;
     if(_use_tex) {
       enable_surface_option(  _cube, SO_USE_TEXTURE);
       enable_surface_option(  _cubeM, SO_USE_TEXTURE);
       enable_surface_option(  _sphere, SO_USE_TEXTURE);
+      enable_surface_option(  _bombe, SO_USE_TEXTURE);
     } else {
       disable_surface_option(  _cube, SO_USE_TEXTURE);
       disable_surface_option(  _cubeM, SO_USE_TEXTURE);
       disable_surface_option(  _sphere, SO_USE_TEXTURE);
+      disable_surface_option(  _bombe, SO_USE_TEXTURE);
     }
     break;
   case GL4DK_c: /* 'c' utiliser la couleur */
@@ -263,10 +282,12 @@ void key(int keycode) {
       enable_surface_option(  _cube, SO_USE_COLOR);
       enable_surface_option(  _cubeM, SO_USE_COLOR);
       enable_surface_option(  _sphere, SO_USE_COLOR);
+      enable_surface_option(  _bombe, SO_USE_COLOR);
     } else { 
       disable_surface_option(  _cube, SO_USE_COLOR);
       disable_surface_option(  _cubeM, SO_USE_COLOR);
       disable_surface_option(  _sphere, SO_USE_COLOR);
+      disable_surface_option(  _bombe, SO_USE_COLOR);
     }
     break;
   case GL4DK_l: /* 'l' utiliser l'ombrage par la méthode Gouraud */
@@ -275,10 +296,12 @@ void key(int keycode) {
       enable_surface_option(  _cube, SO_USE_LIGHTING);
       enable_surface_option(  _cubeM, SO_USE_LIGHTING);
       enable_surface_option(  _sphere, SO_USE_LIGHTING);
+      enable_surface_option(  _bombe, SO_USE_LIGHTING);
     } else { 
       disable_surface_option(  _cube, SO_USE_LIGHTING);
       disable_surface_option(  _cubeM, SO_USE_LIGHTING);
       disable_surface_option(  _sphere, SO_USE_LIGHTING);
+      disable_surface_option(  _bombe, SO_USE_LIGHTING);
     }
     break;
   default: break;
@@ -299,6 +322,10 @@ void sortie(void) {
   if(_sphere){
     free_surface(_sphere);
     _sphere = NULL;
+  }
+  if(_bombe){
+    free_surface(_bombe);
+    _bombe = NULL;
   }
   /* libère tous les objets produits par GL4Dummies, ici
    * principalement les screen */

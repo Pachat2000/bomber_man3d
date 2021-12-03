@@ -12,6 +12,7 @@
 /* inclure la bibliothèque de rendu DIY */
 #include "rasterize.h"
 #include <stdio.h>
+#include <time.h>
 /* inclusion des entêtes de fonctions de création et de gestion de
  * fenêtres système ouvrant un contexte favorable à GL4dummies. Cette
  * partie est dépendante de la bibliothèque SDL2 */
@@ -25,9 +26,15 @@ static void sortie(void);
 
 /*!\brief une surface représentant un cube */
 static surface_t * _cube = NULL;
+static surface_t * _cubeM = NULL;
+static surface_t * _sphere = NULL;
 /* des variable d'états pour activer/désactiver des options de rendu */
 static int _use_tex = 1, _use_color = 1, _use_lighting = 1;
-
+typedef struct perso{
+  int pos_x;
+  int pos_y;
+}Perso;
+Perso perso;
 
 /* on créé une grille de positions où il y aura des cubes */
 static int _grille[] = {
@@ -85,23 +92,58 @@ void init(void) {
   SDL_GL_SetSwapInterval(0);
   /* on créé le cube */
   _cube   =   mk_cube();         /* ça fait 2x6 triangles      */
+  _cubeM =   mk_cube(); 
+  _sphere   =   mk_sphere(12,12);
   /* on change la couleur */
-  _cube->dcolor = b; 
-
+  _cube->dcolor = b;  
+  _sphere->dcolor = r;
+  _cubeM->dcolor = g;
   /* on leur rajoute la texture */
   id = get_texture_from_BMP("images/tex.bmp");
   set_texture_id(  _cube, id);
+  set_texture_id(  _cubeM, id);
+  set_texture_id(  _sphere, id);
   /* si _use_tex != 0, on active l'utilisation de la texture */
   if(_use_tex) {
     enable_surface_option(  _cube, SO_USE_TEXTURE);
+    enable_surface_option(  _cubeM, SO_USE_TEXTURE);
+    enable_surface_option(  _sphere, SO_USE_TEXTURE);
   }
   /* si _use_lighting != 0, on active l'ombrage */
   if(_use_lighting) {
     enable_surface_option(  _cube, SO_USE_LIGHTING);
+    enable_surface_option(  _cubeM, SO_USE_LIGHTING);
+    enable_surface_option(  _sphere, SO_USE_LIGHTING);
   }
   /* mettre en place la fonction à appeler en cas de sortie */
   atexit(sortie);
 }
+
+// void Lrand(int nb_cube){
+//   static int i =0;
+//   if(i == 0){
+//       srand( time( NULL ) );
+//     float model_view_matrix[16], projection_matrix[16], nmv[16];
+//     /* effacer l'écran et le buffer de profondeur */
+//     gl4dpClearScreen();
+//     clear_depth_map();
+//     /* des macros facilitant le travail avec des matrices et des
+//      vecteurs se trouvent dans la bibliothèque GL4Dummies, dans le
+//      fichier gl4dm.h */
+//     /* charger un frustum dans projection_matrix */
+//     MFRUSTUM(projection_matrix, -0.05f, 0.05f, -0.05f, 0.05f, 0.1f, 1000.0f);
+//     /* charger la matrice identité dans model-view */
+//     MIDENTITY(model_view_matrix);
+//     while (nb_cube != 0 ) {
+//       int searchedValue = rand() % 169;
+//       if (_grille[searchedValue] == 0) {
+//         _grille[searchedValue] = 1;
+//         nb_cube -=1;
+//       }
+//     }
+//     i = 1;
+//   }
+// }
 
 /*!\brief la fonction appelée à chaque display. */
 void draw(void) {
@@ -125,12 +167,20 @@ void draw(void) {
   float cZ = -2.0f * _grilleH / 2.0f;
   /* pour toutes les cases de la grille, afficher un cube quand il y a
    * un 1 dans la grille */
+  //Lrand(25);
   for(int i = 0; i < _grilleW; ++i) { // place les cubes a l'emplecement de la grille 
     for(int j = 0; j < _grilleH; ++j) {
+      if(_grille[i * _grilleW + j] == 3){
+        memcpy(nmv, model_view_matrix, sizeof nmv);
+        translate(nmv, 2.0f * j + cX, 0.0f, 2.0f * i + cZ);
+        transform_n_rasterize(_sphere, nmv, projection_matrix);
+        perso.pos_x = i;
+        perso.pos_y = j;
+      }
       if(_grille[i * _grilleW + j] == 2){
         memcpy(nmv, model_view_matrix, sizeof nmv);
         translate(nmv, 2.0f * j + cX, 0.0f, 2.0f * i + cZ);
-        transform_n_rasterize(_cube, nmv, projection_matrix);
+        transform_n_rasterize(_cubeM, nmv, projection_matrix);
       }
       if(_grille[i * _grilleW + j] == 1) {
 	      /* copie model_view_matrix dans nmv */
@@ -152,28 +202,83 @@ void draw(void) {
 /*!\brief intercepte l'événement clavier pour modifier les options. */
 void key(int keycode) {
   switch(keycode) {
+  case GL4DK_UP:
+    if( _grille[ perso.pos_x * _grilleW +  perso.pos_y - 13 ] != 0 )
+      {
+    break;
+      }
+    else { 
+      _grille[ perso.pos_x * _grilleW +  perso.pos_y]=0;
+    _grille[ perso.pos_x * _grilleW +  perso.pos_y -13]=3;
+    break;
+    }
+    break;
+  case GL4DK_DOWN:
+    if( _grille[ perso.pos_x * _grilleW +  perso.pos_y +13 ] != 0 )
+      {
+    break;
+      }
+    else { 
+      _grille[ perso.pos_x * _grilleW +  perso.pos_y]=0;
+      _grille[ perso.pos_x * _grilleW +  perso.pos_y +13 ]=3;
+    break;
+    }
+    break;
+  case GL4DK_RIGHT:
+    if( _grille[ perso.pos_x * _grilleW +  perso.pos_y + 1 ] != 0 )
+      {
+    break;
+      }
+    else { 
+      _grille[ perso.pos_x * _grilleW +  perso.pos_y]=0;
+      _grille[ perso.pos_x * _grilleW +  perso.pos_y + 1]=3;
+      break;
+    }
+  case GL4DK_LEFT:
+    if( _grille[ perso.pos_x * _grilleW +  perso.pos_y - 1 ] != 0 )
+      {
+    break;
+      }
+    else { 
+      _grille[ perso.pos_x * _grilleW +  perso.pos_y]=0;
+    _grille[ perso.pos_x * _grilleW +  perso.pos_y - 1]=3;
+    break;
+    }
+    break;
   case GL4DK_t: /* 't' la texture */
     _use_tex = !_use_tex;
     if(_use_tex) {
       enable_surface_option(  _cube, SO_USE_TEXTURE);
+      enable_surface_option(  _cubeM, SO_USE_TEXTURE);
+      enable_surface_option(  _sphere, SO_USE_TEXTURE);
     } else {
       disable_surface_option(  _cube, SO_USE_TEXTURE);
+      disable_surface_option(  _cubeM, SO_USE_TEXTURE);
+      disable_surface_option(  _sphere, SO_USE_TEXTURE);
     }
     break;
   case GL4DK_c: /* 'c' utiliser la couleur */
     _use_color = !_use_color;
     if(_use_color) {
       enable_surface_option(  _cube, SO_USE_COLOR);
+      enable_surface_option(  _cubeM, SO_USE_COLOR);
+      enable_surface_option(  _sphere, SO_USE_COLOR);
     } else { 
       disable_surface_option(  _cube, SO_USE_COLOR);
+      disable_surface_option(  _cubeM, SO_USE_COLOR);
+      disable_surface_option(  _sphere, SO_USE_COLOR);
     }
     break;
   case GL4DK_l: /* 'l' utiliser l'ombrage par la méthode Gouraud */
     _use_lighting = !_use_lighting;
     if(_use_lighting) {
       enable_surface_option(  _cube, SO_USE_LIGHTING);
+      enable_surface_option(  _cubeM, SO_USE_LIGHTING);
+      enable_surface_option(  _sphere, SO_USE_LIGHTING);
     } else { 
       disable_surface_option(  _cube, SO_USE_LIGHTING);
+      disable_surface_option(  _cubeM, SO_USE_LIGHTING);
+      disable_surface_option(  _sphere, SO_USE_LIGHTING);
     }
     break;
   default: break;
@@ -186,6 +291,14 @@ void sortie(void) {
   if(_cube) {
     free_surface(_cube);
     _cube = NULL;
+  }
+  if(_cubeM) {
+    free_surface(_cube);
+    _cube = NULL;
+  }
+  if(_sphere){
+    free_surface(_sphere);
+    _sphere = NULL;
   }
   /* libère tous les objets produits par GL4Dummies, ici
    * principalement les screen */

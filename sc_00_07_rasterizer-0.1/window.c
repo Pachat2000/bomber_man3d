@@ -12,6 +12,7 @@
 /* inclure la bibliothèque de rendu DIY */
 #include "rasterize.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 /* inclusion des entêtes de fonctions de création et de gestion de
  * fenêtres système ouvrant un contexte favorable à GL4dummies. Cette
@@ -21,8 +22,10 @@
 /* protos de fonctions locales (static) */
 static void init(void);
 static void draw(void);
-static void key(int keycode);
-static void sortie(void);
+static void keyd(int keycode);
+static void idle(void);
+static void keyu(int keycode);
+static void sortie(void); 
 
 /*!\brief une surface représentant un cube */
 static surface_t * _cube = NULL;
@@ -37,6 +40,57 @@ typedef struct perso{
 }Perso;
 Perso perso;
 
+typedef struct bombe{
+  int position;
+  int avant_explosion;
+  struct bombe* next;
+}Bombe;
+
+typedef Bombe* Bombel;
+static Bombel tab = NULL; 
+
+enum {
+  VK_RIGHT = 0,
+  VK_UP,
+  VK_LEFT,
+  VK_DOWN,
+  VK_SPACE,
+  /* toujours à la fin */
+  VK_SIZEOF
+};
+int _vkeyboard[VK_SIZEOF] = {0, 0, 0, 0, 0};
+//fonction a faire remplir_tab(bombe* tab, int position), incrementer_all(bombe* tab), detruire_bombe(bombe* tab) Bombe* crcer_bombe(int position)
+Bombe* creer_bombe(int position){
+  Bombe* tab= NULL;
+  tab = malloc(sizeof(Bombe));
+  if (tab == NULL) { 
+    exit(1);
+  }
+  tab->next= NULL;
+  tab->avant_explosion = 0;
+  tab->position = position;
+  return tab;
+}
+void remplir_tab(Bombel* tab, int position){
+  if(*tab == NULL){
+    *tab = creer_bombe(position);
+    return;
+  }
+  else{
+    Bombe* l = creer_bombe(position);
+    l->next = *tab;
+    *tab = l;
+    return;
+  }
+}
+void incrementer_all(Bombel* tab){
+  Bombel tmp=*tab;
+  while (*tab == NULL) {
+    (*tab)->avant_explosion += 1;
+    *tab = (*tab)->next;
+  }
+  *tab= tmp;
+}
 /* on créé une grille de positions où il y aura des cubes */
 static int _grille[] = {
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -53,9 +107,38 @@ static int _grille[] = {
   1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 };
+
+void detruire_bombe(Bombel* tab){
+  Bombel tmp=*tab;
+  Bombel last=NULL;
+  while (*tab != NULL) {
+    if ((*tab)->avant_explosion == 3) {
+      _grille[(*tab)->position] = 0;
+      if (last ==NULL) {
+        last = *tab;
+        *tab = (*tab)->next;
+        tmp=*tab;
+      }
+      else if ((*tab)->next == NULL) {
+        *tab = NULL;
+      }
+      else{
+        *tab = (*tab)->next;
+        last->next = *tab;
+      }
+    }
+    else{
+      *tab = (*tab)->next;
+    }
+  }
+  *tab= tmp;
+}
+
 static int _grilleW = 13;
 static int _grilleH = 13;
 
+static int last;
+static int ready = 0;
 /*!\brief paramètre l'application et lance la boucle infinie. */
 int main(int argc, char ** argv) {
   /* tentative de création d'une fenêtre pour GL4Dummies */
@@ -70,9 +153,14 @@ int main(int argc, char ** argv) {
   }
   init();
   /* mettre en place la fonction d'interception clavier */
-  gl4duwKeyDownFunc(key);
+  gl4duwKeyDownFunc(keyd);
+  /* mettre en place la fonction d'interception clavier touche relachée */
+  gl4duwKeyUpFunc(keyu);
+  /* mettre en place la fonction idle (simulation, au sens physique du terme) */
+  gl4duwIdleFunc(idle);
   /* mettre en place la fonction de display */
   gl4duwDisplayFunc(draw);
+  
   /* boucle infinie pour éviter que le programme ne s'arrête et ferme
    * la fenêtre immédiatement */
   gl4duwMainLoop();
@@ -89,6 +177,7 @@ void init(void) {
    * créer le screen avant d'utiliser les fonctions liées au
    * textures */
   gl4dpInitScreen();
+  SDL_GL_SetSwapInterval(1);
   /* Pour forcer la désactivation de la synchronisation verticale */
   SDL_GL_SetSwapInterval(0);
   /* on créé le cube */
@@ -125,6 +214,101 @@ void init(void) {
   atexit(sortie);
 }
 
+void idle(void) {
+  /* on va récupérer le delta-temps */
+  
+  if(_vkeyboard[VK_RIGHT]){
+    if( _grille[ perso.pos_x * _grilleW +  perso.pos_y + 1 ] != 0 ){
+      return;
+    }
+    else { 
+      _grille[ perso.pos_x * _grilleW +  perso.pos_y]=0;
+      _grille[ perso.pos_x * _grilleW +  perso.pos_y + 1]=3;
+      last = _vkeyboard[VK_RIGHT];
+      _vkeyboard[VK_RIGHT] = 0;
+      return;
+    }
+  }
+  if(_vkeyboard[VK_UP]==2){
+    if( _grille[ perso.pos_x * _grilleW +  perso.pos_y - 13 ] != 0 ){
+      return;
+    }
+    else {
+      _grille[ perso.pos_x * _grilleW +  perso.pos_y]=0;
+      _grille[ perso.pos_x * _grilleW +  perso.pos_y -13]=3;
+      last = _vkeyboard[VK_UP];
+      _vkeyboard[VK_UP] = 0;
+      return;
+    }
+  }
+  if(_vkeyboard[VK_LEFT]==3){
+    if( _grille[ perso.pos_x * _grilleW +  perso.pos_y - 1 ] != 0 ){
+      return;
+    }
+    else { 
+      _grille[ perso.pos_x * _grilleW +  perso.pos_y]=0;
+      _grille[ perso.pos_x * _grilleW +  perso.pos_y - 1]=3;
+      last = _vkeyboard[VK_LEFT];
+      _vkeyboard[VK_LEFT]=0;
+      return;
+    }
+  }
+  if(_vkeyboard[VK_DOWN]==4){
+    if( _grille[ perso.pos_x * _grilleW +  perso.pos_y +13 ] != 0 ){
+        return;
+    }
+    else { 
+      _grille[ perso.pos_x * _grilleW +  perso.pos_y]=0;
+      _grille[ perso.pos_x * _grilleW +  perso.pos_y +13]=3;
+      last = _vkeyboard[VK_DOWN];
+      _vkeyboard[VK_DOWN] = 0;
+      return;
+    }
+  }
+  if(_vkeyboard[VK_SPACE]==5){
+    if(last == 1){
+      if( _grille[ perso.pos_x * _grilleW +  perso.pos_y + 1 ] != 0 ){
+        return;
+      }
+      else { 
+        _grille[ perso.pos_x * _grilleW +  perso.pos_y + 1]=4;
+        return;
+      }
+    }
+    else if(last==2){
+      if( _grille[ perso.pos_x * _grilleW +  perso.pos_y - 13 ] != 0 ){
+        return;
+      }
+      else {
+        _grille[ perso.pos_x * _grilleW +  perso.pos_y -13]=4;
+        return;
+      }
+    }
+    else if(last==3){
+      if( _grille[ perso.pos_x * _grilleW +  perso.pos_y - 1 ] != 0 ){
+        return;
+      }
+      else { 
+        _grille[ perso.pos_x * _grilleW +  perso.pos_y - 1]=4;
+        return;
+      }
+    }
+    else if(last==4){
+      if( _grille[ perso.pos_x * _grilleW +  perso.pos_y +13 ] != 0 ){
+          return;
+      }
+      else { 
+        _grille[ perso.pos_x * _grilleW +  perso.pos_y +13]=4;
+        return;
+      }
+    }
+    else{
+      return;
+    }
+  }
+
+}
+
 // void Lrand(int nb_cube){
 //   static int i =0;
 //   if(i == 0){
@@ -141,7 +325,8 @@ void init(void) {
 //     /* charger la matrice identité dans model-view */
 //     MIDENTITY(model_view_matrix);
 //     while (nb_cube != 0 ) {
-//       int searchedValue = rand() % 169;
+//       int searchedValue = rand() % 169;incrementer_all(&tab);
+//        detruire_bombe(&tab);
 //       if (_grille[searchedValue] == 0) {
 //         _grille[searchedValue] = 1;
 //         nb_cube -=1;
@@ -151,8 +336,19 @@ void init(void) {
 //   }
 // }
 
+
+
 /*!\brief la fonction appelée à chaque display. */
 void draw(void) {
+  // le temps à la frame précédente
+  int t, dt;
+  t = gl4dGetElapsedTime();
+  dt = t  / 1000.0; // diviser par mille pour avoir des secondes
+  // pour le frame d'après, je mets à jour t0
+  if (dt == 3) {
+    printf("%d\n",dt); 
+  }
+  vec4 r = {1, 0, 0, 1}, y = {1, 0, 1, 1};
   /* on va récupérer le delta-temps */
   float model_view_matrix[16], projection_matrix[16], nmv[16];
   /* effacer l'écran et le buffer de profondeur */
@@ -180,10 +376,21 @@ void draw(void) {
         memcpy(nmv, model_view_matrix, sizeof nmv);
         translate(nmv, 2.0f * j + cX, 0.0f, 2.0f * i + cZ);
         transform_n_rasterize(_bombe, nmv, projection_matrix);
+        if ( ready == 0) {
+          ready = 1;
+          _bombe->dcolor = r;
+        }
+        else{
+          ready = 0;
+          _bombe->dcolor = y;
+        }
+        SDL_Delay(100);
       }
       if(_grille[i * _grilleW + j] == 3){
         memcpy(nmv, model_view_matrix, sizeof nmv);
         translate(nmv, 2.0f * j + cX, 0.0f, 2.0f * i + cZ);
+        transform_n_rasterize(_cube, nmv, projection_matrix);
+        translate(nmv, 0.0f, 2.0f, 0.0f);
         transform_n_rasterize(_sphere, nmv, projection_matrix);
         perso.pos_x = i;
         perso.pos_y = j;
@@ -211,57 +418,9 @@ void draw(void) {
 }
 
 /*!\brief intercepte l'événement clavier pour modifier les options. */
-void key(int keycode) {
+void keyd(int keycode) {
+  //_grille[ perso.pos_x * _grilleW +  perso.pos_y +13 ]=4;
   switch(keycode) {
-  case GL4DK_SPACE: // La partie bombe a amélioré
-    if( _grille[ perso.pos_x * _grilleW +  perso.pos_y +13 ] != 0 )
-      {
-    break;
-      }
-    else { 
-      _grille[ perso.pos_x * _grilleW +  perso.pos_y +13 ]=4;
-    break;
-    } 
-  case GL4DK_UP:
-    if( _grille[ perso.pos_x * _grilleW +  perso.pos_y - 13 ] != 0 )
-      {
-    break;
-      }
-    else { 
-      _grille[ perso.pos_x * _grilleW +  perso.pos_y]=0;
-    _grille[ perso.pos_x * _grilleW +  perso.pos_y -13]=3;
-    break;
-    }
-  case GL4DK_DOWN:
-    if( _grille[ perso.pos_x * _grilleW +  perso.pos_y +13 ] != 0 )
-      {
-    break;
-      }
-    else { 
-      _grille[ perso.pos_x * _grilleW +  perso.pos_y]=0;
-      _grille[ perso.pos_x * _grilleW +  perso.pos_y +13 ]=3;
-    break;
-    }
-  case GL4DK_RIGHT:
-    if( _grille[ perso.pos_x * _grilleW +  perso.pos_y + 1 ] != 0 )
-      {
-    break;
-      }
-    else { 
-      _grille[ perso.pos_x * _grilleW +  perso.pos_y]=0;
-      _grille[ perso.pos_x * _grilleW +  perso.pos_y + 1]=3;
-      break;
-    }
-  case GL4DK_LEFT:
-    if( _grille[ perso.pos_x * _grilleW +  perso.pos_y - 1 ] != 0 )
-      {
-    break;
-      }
-    else { 
-      _grille[ perso.pos_x * _grilleW +  perso.pos_y]=0;
-    _grille[ perso.pos_x * _grilleW +  perso.pos_y - 1]=3;
-    break;
-    }
   case GL4DK_t: /* 't' la texture */
     _use_tex = !_use_tex;
     if(_use_tex) {
@@ -303,6 +462,41 @@ void key(int keycode) {
       disable_surface_option(  _sphere, SO_USE_LIGHTING);
       disable_surface_option(  _bombe, SO_USE_LIGHTING);
     }
+    case GL4DK_RIGHT:
+      _vkeyboard[VK_RIGHT] = 1;
+      break;
+    case GL4DK_UP:
+      _vkeyboard[VK_UP] = 2;
+      break;
+    case GL4DK_LEFT:
+      _vkeyboard[VK_LEFT] = 3;
+      break;
+    case GL4DK_DOWN:
+      _vkeyboard[VK_DOWN] = 4;
+      break;
+    case GL4DK_SPACE:
+      _vkeyboard[VK_SPACE] = 5;
+      break;
+  default: break;
+  }
+}
+
+void keyu(int keycode) {
+  switch(keycode) {
+  case GL4DK_RIGHT:
+    _vkeyboard[VK_RIGHT] = 0;
+    break;
+  case GL4DK_UP:
+    _vkeyboard[VK_UP] = 0;
+    break;
+  case GL4DK_LEFT:
+    _vkeyboard[VK_LEFT] = 0;
+    break;
+  case GL4DK_DOWN:
+    _vkeyboard[VK_DOWN] = 0;
+    break;
+  case GL4DK_SPACE:
+    _vkeyboard[VK_SPACE] = 0;
     break;
   default: break;
   }

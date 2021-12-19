@@ -11,6 +11,7 @@
 #include <GL4D/gl4dp.h>
 /* inclure la bibliothèque de rendu DIY */
 #include "rasterize.h"
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -85,7 +86,7 @@ void remplir_tab(Bombel* tab, int position){
 }
 void incrementer_all(Bombel* tab){
   Bombel tmp=*tab;
-  while (*tab == NULL) {
+  while (*tab != NULL) {
     (*tab)->avant_explosion += 1;
     *tab = (*tab)->next;
   }
@@ -112,15 +113,15 @@ void detruire_bombe(Bombel* tab){
   Bombel tmp=*tab;
   Bombel last=NULL;
   while (*tab != NULL) {
-    if ((*tab)->avant_explosion == 3) {
+    if ((*tab)->avant_explosion == 600) {
       _grille[(*tab)->position] = 0;
       if (last ==NULL) {
-        last = *tab;
         *tab = (*tab)->next;
-        tmp=*tab;
+        tmp = *tab;
       }
       else if ((*tab)->next == NULL) {
-        *tab = NULL;
+        *tab = last;
+        (*tab)->next = NULL;
       }
       else{
         *tab = (*tab)->next;
@@ -128,6 +129,7 @@ void detruire_bombe(Bombel* tab){
       }
     }
     else{
+      last = *tab;
       *tab = (*tab)->next;
     }
   }
@@ -272,6 +274,7 @@ void idle(void) {
       }
       else { 
         _grille[ perso.pos_x * _grilleW +  perso.pos_y + 1]=4;
+        remplir_tab(&tab,perso.pos_x * _grilleW +  perso.pos_y +1);
         return;
       }
     }
@@ -281,6 +284,7 @@ void idle(void) {
       }
       else {
         _grille[ perso.pos_x * _grilleW +  perso.pos_y -13]=4;
+        remplir_tab(&tab,perso.pos_x * _grilleW +  perso.pos_y -13);
         return;
       }
     }
@@ -290,6 +294,7 @@ void idle(void) {
       }
       else { 
         _grille[ perso.pos_x * _grilleW +  perso.pos_y - 1]=4;
+        remplir_tab(&tab,perso.pos_x * _grilleW +  perso.pos_y -1);
         return;
       }
     }
@@ -299,6 +304,7 @@ void idle(void) {
       }
       else { 
         _grille[ perso.pos_x * _grilleW +  perso.pos_y +13]=4;
+        remplir_tab(&tab,perso.pos_x * _grilleW +  perso.pos_y +13);
         return;
       }
     }
@@ -341,13 +347,13 @@ void idle(void) {
 /*!\brief la fonction appelée à chaque display. */
 void draw(void) {
   // le temps à la frame précédente
-  int t, dt;
+  static double t0 = 0.0; // le temps à la frame précédente
+  double t, dt;
   t = gl4dGetElapsedTime();
-  dt = t  / 1000.0; // diviser par mille pour avoir des secondes
+  dt = (t - t0) / 1000.0; // diviser par mille pour avoir des secondes
   // pour le frame d'après, je mets à jour t0
-  if (dt == 3) {
-    printf("%d\n",dt); 
-  }
+  t0 = t; // diviser par mille pour avoir des secondes
+  // pour le frame d'après, je mets à jour t0
   vec4 r = {1, 0, 0, 1}, y = {1, 0, 1, 1};
   /* on va récupérer le delta-temps */
   float model_view_matrix[16], projection_matrix[16], nmv[16];
@@ -375,6 +381,8 @@ void draw(void) {
       if(_grille[i * _grilleW + j] == 4){
         memcpy(nmv, model_view_matrix, sizeof nmv);
         translate(nmv, 2.0f * j + cX, 0.0f, 2.0f * i + cZ);
+        float s =2 *sin(t/100);
+        scale(nmv, s, s, s);
         transform_n_rasterize(_bombe, nmv, projection_matrix);
         if ( ready == 0) {
           ready = 1;
@@ -384,7 +392,8 @@ void draw(void) {
           ready = 0;
           _bombe->dcolor = y;
         }
-        SDL_Delay(100);
+        incrementer_all(&tab);
+        detruire_bombe(&tab);
       }
       if(_grille[i * _grilleW + j] == 3){
         memcpy(nmv, model_view_matrix, sizeof nmv);

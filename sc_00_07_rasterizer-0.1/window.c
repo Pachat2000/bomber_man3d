@@ -33,14 +33,16 @@ static surface_t * _cube = NULL;
 static surface_t * _cubeM = NULL;
 static surface_t * _sphere = NULL;
 static surface_t * _bombe = NULL;
+static surface_t * _block = NULL;
 /* des variable d'états pour activer/désactiver des options de rendu */
 static int _use_tex = 1, _use_color = 1, _use_lighting = 1;
+/*La structure du personnages qui contiendra les position de ce dernier */
 typedef struct perso{
   int pos_x;
   int pos_y;
 }Perso;
 Perso perso;
-
+/*La structure de la bombe qui contiendra les position de ce dernier et le temps avant qu'il disparaisse */
 typedef struct bombe{
   int position;
   int avant_explosion;
@@ -50,17 +52,19 @@ typedef struct bombe{
 typedef Bombe* Bombel;
 static Bombel tab = NULL; 
 
+
+/*tous les entres clavier possible dans le jeux*/
 enum {
   VK_RIGHT = 0,
   VK_UP,
   VK_LEFT,
   VK_DOWN,
   VK_SPACE,
-  /* toujours à la fin */
   VK_SIZEOF
 };
 int _vkeyboard[VK_SIZEOF] = {0, 0, 0, 0, 0};
-//fonction a faire remplir_tab(bombe* tab, int position), incrementer_all(bombe* tab), detruire_bombe(bombe* tab) Bombe* crcer_bombe(int position)
+
+/*permet de creer une bombe*/
 Bombe* creer_bombe(int position){
   Bombe* tab= NULL;
   tab = malloc(sizeof(Bombe));
@@ -72,6 +76,7 @@ Bombe* creer_bombe(int position){
   tab->position = position;
   return tab;
 }
+/*permet d'enregistrer une bombe dans un tableau*/
 void remplir_tab(Bombel* tab, int position){
   if(*tab == NULL){
     *tab = creer_bombe(position);
@@ -84,6 +89,7 @@ void remplir_tab(Bombel* tab, int position){
     return;
   }
 }
+/*increment tous ce qui dans le tableau de 1*/
 void incrementer_all(Bombel* tab){
   Bombel tmp=*tab;
   while (*tab != NULL) {
@@ -108,7 +114,7 @@ static int _grille[] = {
   1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 };
-
+/*permet de faire disparaitre une bombe si celle si atteint 600*/
 void detruire_bombe(Bombel* tab){
   Bombel tmp=*tab;
   Bombel last=NULL;
@@ -127,7 +133,7 @@ void detruire_bombe(Bombel* tab){
         *tab = (*tab)->next;
         last->next = *tab;
       }
-    }
+    } 
     else{
       last = *tab;
       *tab = (*tab)->next;
@@ -173,7 +179,7 @@ int main(int argc, char ** argv) {
  * utilisées dans ce code */
 void init(void) {
   GLuint id;
-  vec4 r = {1, 0, 0, 1}, g = {0, 1, 0, 1}, b = {0, 0, 1, 1}, y = {1, 0, 1, 1};
+  vec4 r = {1, 0, 0, 1}, g = {0, 1, 0, 1}, b = {0, 0, 1, 1}, y = {1, 0, 1, 1}, x = {0, 1, 1, 1};
   /* création d'un screen GL4Dummies (texture dans laquelle nous
    * pouvons dessiner) aux dimensions de la fenêtre.  IMPORTANT de
    * créer le screen avant d'utiliser les fonctions liées au
@@ -185,6 +191,7 @@ void init(void) {
   /* on créé le cube */
   _cube   =   mk_cube();         /* ça fait 2x6 triangles      */
   _cubeM =   mk_cube(); 
+  _block =   mk_cube(); 
   _sphere   =   mk_sphere(12,12);
   _bombe = mk_sphere(12,12); // Partie bombe a améliorer
   /* on change la couleur */
@@ -198,12 +205,14 @@ void init(void) {
   set_texture_id(  _cubeM, id);
   set_texture_id(  _sphere, id);
   set_texture_id(  _bombe, id);
+  set_texture_id(  _block, id);
   /* si _use_tex != 0, on active l'utilisation de la texture */
   if(_use_tex) {
     enable_surface_option(  _cube, SO_USE_TEXTURE);
     enable_surface_option(  _cubeM, SO_USE_TEXTURE);
     enable_surface_option(  _sphere, SO_USE_TEXTURE);
     enable_surface_option(  _bombe, SO_USE_TEXTURE);
+    enable_surface_option(  _block, SO_USE_TEXTURE);
   }
   /* si _use_lighting != 0, on active l'ombrage */
   if(_use_lighting) {
@@ -211,11 +220,12 @@ void init(void) {
     enable_surface_option(  _cubeM, SO_USE_LIGHTING);
     enable_surface_option(  _sphere, SO_USE_LIGHTING);
     enable_surface_option(  _bombe, SO_USE_LIGHTING);
+    enable_surface_option(  _block, SO_USE_LIGHTING);
   }
   /* mettre en place la fonction à appeler en cas de sortie */
   atexit(sortie);
 }
-
+/*permet de faire l'implementation des tousches du perso(tous ce qui peut faire)*/
 void idle(void) {
   /* on va récupérer le delta-temps */
   
@@ -314,46 +324,41 @@ void idle(void) {
   }
 
 }
-
-// void Lrand(int nb_cube){
-//   static int i =0;
-//   if(i == 0){
-//       srand( time( NULL ) );
-//     float model_view_matrix[16], projection_matrix[16], nmv[16];
-//     /* effacer l'écran et le buffer de profondeur */
-//     gl4dpClearScreen();
-//     clear_depth_map();
-//     /* des macros facilitant le travail avec des matrices et des
-//      vecteurs se trouvent dans la bibliothèque GL4Dummies, dans le
-//      fichier gl4dm.h */
-//     /* charger un frustum dans projection_matrix */
-//     MFRUSTUM(projection_matrix, -0.05f, 0.05f, -0.05f, 0.05f, 0.1f, 1000.0f);
-//     /* charger la matrice identité dans model-view */
-//     MIDENTITY(model_view_matrix);
-//     while (nb_cube != 0 ) {
-//       int searchedValue = rand() % 169;incrementer_all(&tab);
-//        detruire_bombe(&tab);
-//       if (_grille[searchedValue] == 0) {
-//         _grille[searchedValue] = 1;
-//         nb_cube -=1;
-//       }
-//     }
-//     i = 1;
-//   }
-// }
+/*place des block dans des position alleatoire sur la grille, j'en ai disposé 25 dans draw*/
+ void Lrand(int nb_cube){
+   static int i =0;
+   if(i == 0){
+       srand( time( NULL ) );
+     float model_view_matrix[16], projection_matrix[16], nmv[16];
+     /* effacer l'écran et le buffer de profondeur */
+     gl4dpClearScreen();
+     clear_depth_map();
+     /* des macros facilitant le travail avec des matrices et des
+      vecteurs se trouvent dans la bibliothèque GL4Dummies, dans le
+      fichier gl4dm.h */
+    /* charger un frustum dans projection_matrix */
+     MFRUSTUM(projection_matrix, -0.05f, 0.05f, -0.05f, 0.05f, 0.1f, 1000.0f);
+     /* charger la matrice identité dans model-view */
+     MIDENTITY(model_view_matrix);
+     while (nb_cube != 0 ) {
+       int searchedValue = rand() % 169;incrementer_all(&tab);
+        detruire_bombe(&tab);
+       if (_grille[searchedValue] == 0) {
+         _grille[searchedValue] = 5;
+         nb_cube -=1;
+       }
+     }
+     i = 1;
+   }
+ }
 
 
 
 /*!\brief la fonction appelée à chaque display. */
 void draw(void) {
   // le temps à la frame précédente
-  static double t0 = 0.0; // le temps à la frame précédente
-  double t, dt;
+  double t;
   t = gl4dGetElapsedTime();
-  dt = (t - t0) / 1000.0; // diviser par mille pour avoir des secondes
-  // pour le frame d'après, je mets à jour t0
-  t0 = t; // diviser par mille pour avoir des secondes
-  // pour le frame d'après, je mets à jour t0
   vec4 r = {1, 0, 0, 1}, y = {1, 0, 1, 1};
   /* on va récupérer le delta-temps */
   float model_view_matrix[16], projection_matrix[16], nmv[16];
@@ -375,9 +380,15 @@ void draw(void) {
   float cZ = -2.0f * _grilleH / 2.0f;
   /* pour toutes les cases de la grille, afficher un cube quand il y a
    * un 1 dans la grille */
-  //Lrand(25);
-  for(int i = 0; i < _grilleW; ++i) { // place les cubes a l'emplecement de la grille 
+   /*place 25 cube dans des position aleatoire*/
+  Lrand(25);
+  for(int i = 0; i < _grilleW; ++i) { // place les cubes a l'emplecement de la grille par rapport a leur chiffre respectif
     for(int j = 0; j < _grilleH; ++j) {
+      if(_grille[i * _grilleW + j] == 5){
+        memcpy(nmv, model_view_matrix, sizeof nmv);
+        translate(nmv, 2.0f * j + cX, 0.0f, 2.0f * i + cZ);
+        transform_n_rasterize(_block, nmv, projection_matrix);
+      }
       if(_grille[i * _grilleW + j] == 4){
         memcpy(nmv, model_view_matrix, sizeof nmv);
         translate(nmv, 2.0f * j + cX, 0.0f, 2.0f * i + cZ);
@@ -437,11 +448,13 @@ void keyd(int keycode) {
       enable_surface_option(  _cubeM, SO_USE_TEXTURE);
       enable_surface_option(  _sphere, SO_USE_TEXTURE);
       enable_surface_option(  _bombe, SO_USE_TEXTURE);
+      enable_surface_option(  _block, SO_USE_TEXTURE);
     } else {
       disable_surface_option(  _cube, SO_USE_TEXTURE);
       disable_surface_option(  _cubeM, SO_USE_TEXTURE);
       disable_surface_option(  _sphere, SO_USE_TEXTURE);
       disable_surface_option(  _bombe, SO_USE_TEXTURE);
+      disable_surface_option(  _block, SO_USE_TEXTURE);
     }
     break;
   case GL4DK_c: /* 'c' utiliser la couleur */
@@ -451,11 +464,13 @@ void keyd(int keycode) {
       enable_surface_option(  _cubeM, SO_USE_COLOR);
       enable_surface_option(  _sphere, SO_USE_COLOR);
       enable_surface_option(  _bombe, SO_USE_COLOR);
+      enable_surface_option(  _block, SO_USE_COLOR);
     } else { 
       disable_surface_option(  _cube, SO_USE_COLOR);
       disable_surface_option(  _cubeM, SO_USE_COLOR);
       disable_surface_option(  _sphere, SO_USE_COLOR);
       disable_surface_option(  _bombe, SO_USE_COLOR);
+      disable_surface_option(  _block, SO_USE_COLOR);
     }
     break;
   case GL4DK_l: /* 'l' utiliser l'ombrage par la méthode Gouraud */
@@ -465,11 +480,13 @@ void keyd(int keycode) {
       enable_surface_option(  _cubeM, SO_USE_LIGHTING);
       enable_surface_option(  _sphere, SO_USE_LIGHTING);
       enable_surface_option(  _bombe, SO_USE_LIGHTING);
+      enable_surface_option(  _block, SO_USE_LIGHTING);
     } else { 
       disable_surface_option(  _cube, SO_USE_LIGHTING);
       disable_surface_option(  _cubeM, SO_USE_LIGHTING);
       disable_surface_option(  _sphere, SO_USE_LIGHTING);
       disable_surface_option(  _bombe, SO_USE_LIGHTING);
+      disable_surface_option(  _block, SO_USE_LIGHTING);
     }
     case GL4DK_RIGHT:
       _vkeyboard[VK_RIGHT] = 1;
@@ -529,6 +546,10 @@ void sortie(void) {
   if(_bombe){
     free_surface(_bombe);
     _bombe = NULL;
+  }
+  if(_block){
+    free_surface(_block);
+    _block = NULL;
   }
   /* libère tous les objets produits par GL4Dummies, ici
    * principalement les screen */

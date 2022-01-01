@@ -78,11 +78,11 @@ Bombe* creer_bombe(int position){
 }
 /*permet d'enregistrer une bombe dans un tableau*/
 void remplir_tab(Bombel* tab, int position){
-  if(*tab == NULL){
+  if(*tab == NULL){ // si il n'y a pas de tableay alors on l'initialise
     *tab = creer_bombe(position);
     return;
   }
-  else{
+  else{// sinon on le rajoute en tete de liste
     Bombe* l = creer_bombe(position);
     l->next = *tab;
     *tab = l;
@@ -121,15 +121,15 @@ void detruire_bombe(Bombel* tab){
   while (*tab != NULL) {
     if ((*tab)->avant_explosion == 600) {
       _grille[(*tab)->position] = 0;
-      if (last ==NULL) {
+      if (last ==NULL) { // le cas ou c le premier dans la liste
         *tab = (*tab)->next;
         tmp = *tab;
       }
-      else if ((*tab)->next == NULL) {
+      else if ((*tab)->next == NULL) {// le cas ou c le dernier
         *tab = last;
         (*tab)->next = NULL;
       }
-      else{
+      else{ // sinon s'est forcement à l'interieur 
         *tab = (*tab)->next;
         last->next = *tab;
       }
@@ -229,11 +229,11 @@ void init(void) {
 void idle(void) {
   /* on va récupérer le delta-temps */
   
-  if(_vkeyboard[VK_RIGHT]){
-    if( _grille[ perso.pos_x * _grilleW +  perso.pos_y + 1 ] != 0 ){
+  if(_vkeyboard[VK_RIGHT]){// si le cas d'appuyer en haut  
+    if( _grille[ perso.pos_x * _grilleW +  perso.pos_y + 1 ] != 0 ){// le cas ou si on veut avancer il y a un mur bas on peut pas passer
       return;
     }
-    else { 
+    else { //sinon on peut avancer dans la grille
       _grille[ perso.pos_x * _grilleW +  perso.pos_y]=0;
       _grille[ perso.pos_x * _grilleW +  perso.pos_y + 1]=3;
       last = _vkeyboard[VK_RIGHT];
@@ -241,11 +241,11 @@ void idle(void) {
       return;
     }
   }
-  if(_vkeyboard[VK_UP]==2){
+  if(_vkeyboard[VK_UP]==2){// le cas ou si on veut avancer il y a un mur bas on peut pas passer
     if( _grille[ perso.pos_x * _grilleW +  perso.pos_y - 13 ] != 0 ){
       return;
     }
-    else {
+    else {//sinon on peut avancer dans la grille
       _grille[ perso.pos_x * _grilleW +  perso.pos_y]=0;
       _grille[ perso.pos_x * _grilleW +  perso.pos_y -13]=3;
       last = _vkeyboard[VK_UP];
@@ -253,11 +253,11 @@ void idle(void) {
       return;
     }
   }
-  if(_vkeyboard[VK_LEFT]==3){
+  if(_vkeyboard[VK_LEFT]==3){// le cas ou si on veut avancer il y a un mur bas on peut pas passer
     if( _grille[ perso.pos_x * _grilleW +  perso.pos_y - 1 ] != 0 ){
       return;
     }
-    else { 
+    else { //sinon on peut avancer dans la grille
       _grille[ perso.pos_x * _grilleW +  perso.pos_y]=0;
       _grille[ perso.pos_x * _grilleW +  perso.pos_y - 1]=3;
       last = _vkeyboard[VK_LEFT];
@@ -265,11 +265,11 @@ void idle(void) {
       return;
     }
   }
-  if(_vkeyboard[VK_DOWN]==4){
+  if(_vkeyboard[VK_DOWN]==4){// le cas ou si on veut avancer il y a un mur bas on peut pas passer
     if( _grille[ perso.pos_x * _grilleW +  perso.pos_y +13 ] != 0 ){
         return;
     }
-    else { 
+    else { //sinon on peut avancer dans la grille
       _grille[ perso.pos_x * _grilleW +  perso.pos_y]=0;
       _grille[ perso.pos_x * _grilleW +  perso.pos_y +13]=3;
       last = _vkeyboard[VK_DOWN];
@@ -277,44 +277,44 @@ void idle(void) {
       return;
     }
   }
-  if(_vkeyboard[VK_SPACE]==5){
+  if(_vkeyboard[VK_SPACE]==5){// le cas ou si on veut avancer il y a un mur bas on peut pas passer
     if(last == 1){
       if( _grille[ perso.pos_x * _grilleW +  perso.pos_y + 1 ] != 0 ){
         return;
       }
-      else { 
+      else { //sinon on peut poser la bombe dans la grille
         _grille[ perso.pos_x * _grilleW +  perso.pos_y + 1]=4;
-        remplir_tab(&tab,perso.pos_x * _grilleW +  perso.pos_y +1);
+        remplir_tab(&tab,perso.pos_x * _grilleW +  perso.pos_y +1);//on enregistre la position de la bombe dans la liste
         return;
       }
     }
-    else if(last==2){
+    else if(last==2){// le cas ou si on veut avancer il y a un mur bas on peut pas passer
       if( _grille[ perso.pos_x * _grilleW +  perso.pos_y - 13 ] != 0 ){
         return;
       }
-      else {
+      else {//sinon on peut poser la bombe dans la grille
         _grille[ perso.pos_x * _grilleW +  perso.pos_y -13]=4;
-        remplir_tab(&tab,perso.pos_x * _grilleW +  perso.pos_y -13);
+        remplir_tab(&tab,perso.pos_x * _grilleW +  perso.pos_y -13);//on enregistre la position de la bombe dans la liste
         return;
       }
     }
-    else if(last==3){
+    else if(last==3){// le cas ou si on veut avancer il y a un mur bas on peut pas passer
       if( _grille[ perso.pos_x * _grilleW +  perso.pos_y - 1 ] != 0 ){
         return;
       }
-      else { 
+      else { //sinon on peut poser la bombe dans la grille
         _grille[ perso.pos_x * _grilleW +  perso.pos_y - 1]=4;
-        remplir_tab(&tab,perso.pos_x * _grilleW +  perso.pos_y -1);
+        remplir_tab(&tab,perso.pos_x * _grilleW +  perso.pos_y -1);//on enregistre la position de la bombe dans la liste
         return;
       }
     }
-    else if(last==4){
+    else if(last==4){// le cas ou si on veut avancer il y a un mur bas on peut pas passer
       if( _grille[ perso.pos_x * _grilleW +  perso.pos_y +13 ] != 0 ){
           return;
       }
-      else { 
+      else { //sinon on peut poser la bombe dans la grille
         _grille[ perso.pos_x * _grilleW +  perso.pos_y +13]=4;
-        remplir_tab(&tab,perso.pos_x * _grilleW +  perso.pos_y +13);
+        remplir_tab(&tab,perso.pos_x * _grilleW +  perso.pos_y +13);//on enregistre la position de la bombe dans la liste
         return;
       }
     }
@@ -341,8 +341,7 @@ void idle(void) {
      /* charger la matrice identité dans model-view */
      MIDENTITY(model_view_matrix);
      while (nb_cube != 0 ) {
-       int searchedValue = rand() % 169;incrementer_all(&tab);
-        detruire_bombe(&tab);
+       int searchedValue = rand() % 169;// la taille de notre grille
        if (_grille[searchedValue] == 0) {
          _grille[searchedValue] = 5;
          nb_cube -=1;
@@ -384,12 +383,12 @@ void draw(void) {
   Lrand(25);
   for(int i = 0; i < _grilleW; ++i) { // place les cubes a l'emplecement de la grille par rapport a leur chiffre respectif
     for(int j = 0; j < _grilleH; ++j) {
-      if(_grille[i * _grilleW + j] == 5){
+      if(_grille[i * _grilleW + j] == 5){// la partie les bolcks
         memcpy(nmv, model_view_matrix, sizeof nmv);
         translate(nmv, 2.0f * j + cX, 0.0f, 2.0f * i + cZ);
         transform_n_rasterize(_block, nmv, projection_matrix);
       }
-      if(_grille[i * _grilleW + j] == 4){
+      if(_grille[i * _grilleW + j] == 4){//la partie des bombe
         memcpy(nmv, model_view_matrix, sizeof nmv);
         translate(nmv, 2.0f * j + cX, 0.0f, 2.0f * i + cZ);
         float s =2 *sin(t/100);
@@ -406,7 +405,7 @@ void draw(void) {
         incrementer_all(&tab);
         detruire_bombe(&tab);
       }
-      if(_grille[i * _grilleW + j] == 3){
+      if(_grille[i * _grilleW + j] == 3){// la partie du personnage
         memcpy(nmv, model_view_matrix, sizeof nmv);
         translate(nmv, 2.0f * j + cX, 0.0f, 2.0f * i + cZ);
         transform_n_rasterize(_cube, nmv, projection_matrix);
@@ -415,12 +414,12 @@ void draw(void) {
         perso.pos_x = i;
         perso.pos_y = j;
       }
-      if(_grille[i * _grilleW + j] == 2){
+      if(_grille[i * _grilleW + j] == 2){// la partie pour placer les murs
         memcpy(nmv, model_view_matrix, sizeof nmv);
         translate(nmv, 2.0f * j + cX, 0.0f, 2.0f * i + cZ);
         transform_n_rasterize(_cubeM, nmv, projection_matrix);
       }
-      if(_grille[i * _grilleW + j] == 1) {
+      if(_grille[i * _grilleW + j] == 1) {// la partie des murs extérieur
 	      /* copie model_view_matrix dans nmv */
         memcpy(nmv, model_view_matrix, sizeof nmv);
         /* pour tourner tout le plateau */

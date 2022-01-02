@@ -36,6 +36,7 @@ entrer dans le fichiers ou ce trouve le jeux :
 puis ecrire dans le terminal :
 
 `$ make`
+
 `$ ./rasterizer`
 
 Voila le jeu est lancé !

@@ -33,7 +33,7 @@ entrer dans le fichiers ou ce trouve le jeux :
 
 `$ cd sc_00_00_rasterizer-0.1`
 
-puis ecrire dans le terminal :
+puis écrire dans le terminal :
 
 `$ make`
 
@@ -52,3 +52,7 @@ Fleche Bas : Avancer en bas.
 Fleche Gauche : Avancer à gauche.
 
 Fleche Droite : Avancer à droite
+
+Rayan Elsegahy 2008434 L2-B
+
+Omar Anouar 20001552 L2-B

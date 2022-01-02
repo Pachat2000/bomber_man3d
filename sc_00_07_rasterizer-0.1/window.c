@@ -98,7 +98,7 @@ void incrementer_all(Bombel* tab){
   }
   *tab= tmp;
 }
-/* on créé une grille de positions où il y aura des cubes */
+/* on créé une grille de positions où il y aura des cubes, d'une dimension de 13*13  */
 static int _grille[] = {
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
   1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
@@ -121,11 +121,11 @@ void detruire_bombe(Bombel* tab){
   while (*tab != NULL) {
     if ((*tab)->avant_explosion == 600) {
       _grille[(*tab)->position] = 0;
-      if (last ==NULL) { // le cas ou c le premier dans la liste
+      if (last ==NULL) { // le cas ou s'est le premier dans la liste on le rajoute au début
         *tab = (*tab)->next;
         tmp = *tab;
       }
-      else if ((*tab)->next == NULL) {// le cas ou c le dernier
+      else if ((*tab)->next == NULL) {// le cas ou s'est le dernier on le rajoute a la fin
         *tab = last;
         (*tab)->next = NULL;
       }
@@ -189,10 +189,14 @@ void init(void) {
   /* Pour forcer la désactivation de la synchronisation verticale */
   SDL_GL_SetSwapInterval(0);
   /* on créé le cube */
-  _cube   =   mk_cube();         /* ça fait 2x6 triangles      */
+  _cube   =   mk_cube();  
+  /* creation des murs */       
   _cubeM =   mk_cube(); 
+  /* creation des block */ 
   _block =   mk_cube(); 
+  /* creation d'une sphere */ 
   _sphere   =   mk_sphere(12,12);
+  /* creation d'une bombe */ 
   _bombe = mk_sphere(12,12); // Partie bombe a améliorer
   /* on change la couleur */
   _cube->dcolor = b;  
@@ -342,9 +346,9 @@ void idle(void) {
      MIDENTITY(model_view_matrix);
      while (nb_cube != 0 ) {
        int searchedValue = rand() % 169;// la taille de notre grille
-       if (_grille[searchedValue] == 0) {
+       if (_grille[searchedValue] == 0) {//du coup si s'est vide on peut rajouter un block
          _grille[searchedValue] = 5;
-         nb_cube -=1;
+         nb_cube -=1;//diminue le nombre block restant a posé
        }
      }
      i = 1;
@@ -407,6 +411,7 @@ void draw(void) {
       }
       if(_grille[i * _grilleW + j] == 3){// la partie du personnage
         memcpy(nmv, model_view_matrix, sizeof nmv);
+        /*on translate le un cube et une sphere pour creer le corp*/
         translate(nmv, 2.0f * j + cX, 0.0f, 2.0f * i + cZ);
         transform_n_rasterize(_cube, nmv, projection_matrix);
         translate(nmv, 0.0f, 2.0f, 0.0f);

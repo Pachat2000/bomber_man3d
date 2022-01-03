@@ -14,9 +14,9 @@ on pourra utiliser différents types de cubes comme dans le jeu original.
 
 - b. Les joueurs seront simplement modélisés par un cône surmonté d’une sphère, et de couleurs différentes ; des sphères noires pour les bombes ; des sphères jaunes dont le rayon décroit jusqu’à disparaître pour les effet d’explosion ...
 
-Ce qui n'a pas été réussi à faire:
-
 - c. Gérer toutes les collisions et intéractions liées au jeu ;
+
+Ce qui n'a pas été réussi à faire:
 
 - d. Gérer l’IA des autres joueurs ;
 

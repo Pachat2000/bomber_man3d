@@ -2,11 +2,11 @@
 
 Réalisation d'un Bomberman en vue isométrique
 
-lien ddu projet git: https://code.up8.edu/Spartanzer/bomber_man3d
+lien du projet git: https://code.up8.edu/Spartanzer/bomber_man3d
 
 `1.4.2  Fonctionnalités attendues`
 
-Ce s'on a pu faire:
+Ce qui a été réussi à faire:
 
 - a. Sur la base d’un générateur de labyrinthes, modéliser aléatoirement chaque nouveau niveau : 
 on pourra utiliser différents types de cubes comme dans le jeu original.
@@ -14,7 +14,7 @@ on pourra utiliser différents types de cubes comme dans le jeu original.
 
 - b. Les joueurs seront simplement modélisés par un cône surmonté d’une sphère, et de couleurs différentes ; des sphères noires pour les bombes ; des sphères jaunes dont le rayon décroit jusqu’à disparaître pour les effet d’explosion ...
 
-Ce s'on n'a pas pu faire:
+Ce qui n'a pas été réussi à faire:
 
 - c. Gérer toutes les collisions et intéractions liées au jeu ;
 
